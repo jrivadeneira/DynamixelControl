@@ -123,7 +123,13 @@ class Register:
         
 
     def get_value(self):
-        pass
+        if(self.data_size == 1):
+            return self.packet_handler.read1ByteTxRx(self.port_handler,self.servo_id,self.address)
+        if(self.data_size == 2):
+            return self.packet_handler.read2ByteTxRx(self.port_handler,self.servo_id,self.address)
+        if(self.data_size == 4):
+            return self.packet_handler.read4ByteTxRx(self.port_handler,self.servo_id,self.address)
+        
 
     def set_value(self, value):
         if(self.readonly):
