@@ -56,9 +56,16 @@ present_input_voltage_packet = es.RAM['Present Input Voltage'].get_value()
 present_input_voltage = present_input_voltage_packet[0]/10
 print("Present Input Voltage:", present_input_voltage,'V ::', present_input_voltage_packet)
 
+temperature_limit_packet = es.EEPROM['Temperature Limit'].get_value()
+temperature_limit = temperature_limit_packet[0]
+
 present_temperature_packet = es.RAM['Present Temperature'].get_value()
 present_temperature = present_temperature_packet[0]
-print("Present Temperature:", present_temperature,'C ::', present_temperature_packet)
+print("Present Temperature:", present_temperature, 'C', '/', temperature_limit, 'C ::', present_temperature_packet)
+
+
+temperature_limit_packet = es.EEPROM['Temperature Limit'].get_value()
+temperature_limit = temperature_limit_packet[0]
 
 # print(es.EEPROM['Max Voltage Limit'].get_value())
 # print(es.EEPROM['Min Voltage Limit'].get_value())

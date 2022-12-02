@@ -64,6 +64,7 @@ class ServoController:
 class DynamixelServo:
     EEPROM = None # String(name): Register
     RAM = None
+    STATUS = None
     protocol_version = 2
     packet_handler = None
     
@@ -71,6 +72,7 @@ class DynamixelServo:
         self.id = servo_id
         self.EEPROM = dict()
         self.RAM = dict()
+        self.STATUS = []
 
     # This loads a servo configuration from a file. This config file will not set the id of the servo but serves as a prototype.
     def load_config(self, filepath, port_handler):
@@ -84,10 +86,14 @@ class DynamixelServo:
         print("Loading Register tables...")
         register_definitions = lines[2:]
         register_set = self.EEPROM
+        i = 0
         for each_definition in register_definitions:
             if(each_definition == '\n'):
                 register_set = self.RAM
                 continue
+            if(each_definition == 'getstatus'):
+                self.setup_status(register_definitions[i:])
+                break
             breakout = each_definition.split(breakchar) 
             address = breakout[0]
             size = breakout [1]
@@ -95,10 +101,20 @@ class DynamixelServo:
             access = breakout[3]
             reg = Register(name, address, size, access, protocol,port_handler,self.id)
             register_set[name]=reg
+            i+=1
         print("Done.")
         
     def set_packet_handler(self, handler):
         self.packet_handler = handler
+    
+    def setup_status(self, registers):
+        # Loop over the lines
+        # extract the status label
+        # extract the lookup register
+        # interpet limits if defined
+        # units?
+        for eachline in registers:
+            if('/' in eachline):
 
     def get_status(self):
         pass
