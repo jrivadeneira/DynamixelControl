@@ -38,7 +38,7 @@ class ServoController:
         else:
             servo.packet_handler = self.packet_handler_protocol_1
         self.servos[id] = servo
-
+        return servo
 
     # Displays servo status
     def show_status(self, servo_id):
@@ -108,16 +108,21 @@ class DynamixelServo:
         self.packet_handler = handler
     
     def setup_status(self, registers):
+        pass
         # Loop over the lines
         # extract the status label
         # extract the lookup register
         # interpet limits if defined
         # units?
-        for eachline in registers:
-            if('/' in eachline):
+        # for eachline in registers:
+            # if('/' in eachline):
+
 
     def get_status(self):
         pass
+
+    def reboot(self,port_handler):
+        self.packet_handler.reboot(port_handler, self.id)
 
 # This is a subunit of a servo allowing the mapping of a name to an address and byte length.
 class Register:
