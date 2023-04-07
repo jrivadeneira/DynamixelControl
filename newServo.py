@@ -16,7 +16,7 @@ ctrl.port_handler.setBaudRate(1000000)
 # ctrl.create_servo(7,"Ax18A.conf")
 # ctrl.create_servo(8,"2xl430w250t.conf")
 # ctrl.create_servo(9,"2xl430w250t.conf")
-n1,n2,n3 = 7,8,9
+n1,n2,n3 = 16,17,18
 ctrl.create_servo(n1,"Ax18A.conf")
 ctrl.create_servo(n2,"2xl430w250t.conf")
 ctrl.create_servo(n3,"2xl430w250t.conf")

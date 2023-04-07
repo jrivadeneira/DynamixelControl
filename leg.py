@@ -72,7 +72,7 @@ class Leg:
     
     def get_raised_position(self):
         xyz = self.get_home_position()
-        return (xyz[0], xyz[1], xyz[2] - 200)
+        return (xyz[0], xyz[1], xyz[2] - 225)
     
     def get_forward_position(self):
         xyz = self.get_home_position()

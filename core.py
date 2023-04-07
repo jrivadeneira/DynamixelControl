@@ -31,14 +31,16 @@ servos = [servo1, servo2, servo3, servo4, servo5, servo6, servo7, servo8, servo9
 servos_2xl430w250t = [servo2, servo3, servo5, servo6, servo8, servo9, servo17, servo18]
 
 # check servo error status
-for each in servos:
-    print(each.RAM['Present Position'].get_value())
+# for each in servos:
+    # print(each.RAM['Present Position'].get_value())
 
 # get hardware error status for 2xl430w250t servos
 for each in servos_2xl430w250t:
     print(each.RAM['Hardware Error Status'].get_value())
-    if(each.RAM['Hardware Error Status'].get_value()[2] == 128):
+    if(each.RAM['Hardware Error Status'].get_value()[2] in [128, 33]):
         each.reboot(ctrl.port_handler)
+    # else:
+        # exit()
 
 
 # create lengths for legs
@@ -63,7 +65,7 @@ def move_group(group, position):
 for eachLeg in legs:
     eachLeg.move_to_home()
 time.sleep(1)
-n = 96
+n = 100
 for eachLeg in legs:
     eachLeg.walk_path = eachLeg.get_walk_paths(n)
 
@@ -85,7 +87,25 @@ def take_step():
 def wave_gait():
     # wave gait
     # time on ground
-    time_on_ground = 0.75
+    time_on_ground = 0.5
+    n = 96
+    # calculate paths for each leg using time on ground
+    for eachLeg in legs:
+        eachLeg.walk_path = eachLeg.get_walk_paths(n, time_on_ground)
+    # do not divide the legs into groups 
+    n=len(leg.walk_path)
+    for i in range(n):
+        for index, eachLeg in enumerate(legs):
+            # calculate offset for each leg
+            offset = index * (n//4)
+            print((i + offset)%n,' / ', len(eachLeg.walk_path))
+            eachLeg.move_to(eachLeg.walk_path[(i + offset)%n])
+        
+
+def ripple_gait():
+    # wave gait
+    # time on ground
+    time_on_ground = .5
     n = 96
     # calculate paths for each leg using time on ground
     for eachLeg in legs:
@@ -96,9 +116,32 @@ def wave_gait():
             # calculate offset for each leg
             offset = index * (n//4)
             eachLeg.move_to(eachLeg.walk_path[(i + offset)%n])
-        
-for i in range(10):
-    wave_gait()
+
+def bi_gait():
+    # wave gait
+    # time on ground
+    time_on_ground = .75
+    n = 36
+    # calculate paths for each leg using time on ground
+    for eachLeg in legs:
+        eachLeg.walk_path = eachLeg.get_walk_paths(n, time_on_ground)
+    # divide the legs on diagonal groups
+    group1 = [leg3, leg6]
+    group2 = [leg, leg2]
+    n=len(leg.walk_path)
+    # offset by 50% of the path
+    for i in range(n):
+        for index, eachLeg in enumerate(group1):
+            # calculate offset for each leg
+            offset = 0
+            eachLeg.move_to(eachLeg.walk_path[(i + offset)%n])
+        for index, eachLeg in enumerate(group2):
+            # calculate offset for each leg
+            offset = 0
+            eachLeg.move_to(eachLeg.walk_path[(i + offset + (n//2))%n])
+
+for i in range(3):
+    bi_gait()
 
 time.sleep(5)
 for eachServo in servos:
