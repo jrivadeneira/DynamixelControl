@@ -16,32 +16,32 @@ ctrl.port_handler.setBaudRate(1000000)
 # ctrl.create_servo(7,"Ax18A.conf")
 # ctrl.create_servo(8,"2xl430w250t.conf")
 # ctrl.create_servo(9,"2xl430w250t.conf")
-n1,n2,n3 = 16,17,18
+n1,n2,n3 = 13,14,15
 ctrl.create_servo(n1,"Ax18A.conf")
-ctrl.create_servo(n2,"2xl430w250t.conf")
-ctrl.create_servo(n3,"2xl430w250t.conf")
+# ctrl.create_servo(n2,"2xl430w250t.conf")
+# ctrl.create_servo(n3,"2xl430w250t.conf")
 
 # set id's to 7 8 and 9
 
 # show baud rates
 print(ctrl.get_servo(n1).EEPROM['Baud Rate'].get_value())
-print(ctrl.get_servo(n2).EEPROM['Baud Rate'].get_value())
-print(ctrl.get_servo(n3).EEPROM['Baud Rate'].get_value())
+# print(ctrl.get_servo(n2).EEPROM['Baud Rate'].get_value())
+# print(ctrl.get_servo(n3).EEPROM['Baud Rate'].get_value())
 
 
 # show hardware error status
-print(ctrl.get_servo(n2).RAM['Hardware Error Status'].get_value())
-print(ctrl.get_servo(n3).RAM['Hardware Error Status'].get_value())
+# print(ctrl.get_servo(n2).RAM['Hardware Error Status'].get_value())
+# print(ctrl.get_servo(n3).RAM['Hardware Error Status'].get_value())
 # reboot those servos
-ctrl.get_servo(n2).reboot(ctrl.port_handler)
-ctrl.get_servo(n3).reboot(ctrl.port_handler)
-time.sleep(1)
-print(ctrl.get_servo(n2).RAM['Hardware Error Status'].get_value())
-print(ctrl.get_servo(n3).RAM['Hardware Error Status'].get_value())
+# ctrl.get_servo(n2).reboot(ctrl.port_handler)
+# ctrl.get_servo(n3).reboot(ctrl.port_handler)
+# time.sleep(1)
+# print(ctrl.get_servo(n2).RAM['Hardware Error Status'].get_value())
+# print(ctrl.get_servo(n3).RAM['Hardware Error Status'].get_value())
 # set ids to 16 17 and 18
-# ctrl.get_servo(n1).EEPROM['ID'].set_value(16)
-# ctrl.get_servo(n2).EEPROM['ID'].set_value(17)
-# ctrl.get_servo(n3).EEPROM['ID'].set_value(18)
+ctrl.get_servo(n1).EEPROM['ID'].set_value(13)
+# ctrl.get_servo(n2).EEPROM['ID'].set_value(14)
+# ctrl.get_servo(n3).EEPROM['ID'].set_value(15)
 # # set baud rate to 3 (1Mbps)
 # ctrl.get_servo(n1).EEPROM['Baud Rate'].set_value(1)
 # ctrl.get_servo(n2).EEPROM['Baud Rate'].set_value(3)

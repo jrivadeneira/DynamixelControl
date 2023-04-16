@@ -76,11 +76,11 @@ class Leg:
     
     def get_forward_position(self):
         xyz = self.get_home_position()
-        return (xyz[0], xyz[1] + 75, xyz[2])
+        return (xyz[0], xyz[1] + 45, xyz[2])
     
     def get_backward_position(self):
         xyz = self.get_home_position()
-        return (xyz[0], xyz[1] - 75, xyz[2])
+        return (xyz[0], xyz[1] - 45, xyz[2])
 
     def rotate(self, xyz, theta):
         x = xyz[0] * math.cos(theta) - xyz[1] * math.sin(theta)
@@ -92,5 +92,5 @@ class Leg:
         forward = self.get_forward_position()
         backward = self.get_backward_position()
         raised = self.get_raised_position()
-        paths = calculate_line_points(backward, forward, int(steps * time_on_ground)) + calculate_bezier_points(forward, raised, backward, int(steps*(1-time_on_ground)))
+        paths = calculate_line_points(backward, forward, math.ceil(steps * time_on_ground)) + calculate_bezier_points(forward, raised, backward, math.floor(steps*(1-time_on_ground)))
         return paths
