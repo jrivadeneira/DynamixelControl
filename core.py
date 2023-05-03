@@ -3,7 +3,7 @@ from dynafacade import ServoController
 import time
 import math
 
-ctrl = ServoController('COM3')
+ctrl = ServoController('/dev/cu.usbserial-1410')
 ctrl.port_handler.setBaudRate(1000000)
 
 # create servos for first three legs
@@ -30,9 +30,6 @@ servo15 = ctrl.create_servo(14,"2xl430w250t.conf")
 servo16 = ctrl.create_servo(16,"Ax18A.conf")
 servo17 = ctrl.create_servo(17,"2xl430w250t.conf")
 servo18 = ctrl.create_servo(18,"2xl430w250t.conf")
-
-
-
 
 servos = [servo1, servo2, servo3, servo4, servo5, servo6, servo7, servo8, servo9, servo10, servo11, servo12, servo13, servo14, servo15, servo16, servo17, servo18]
 servos_2xl430w250t = [servo2, servo3, servo5, servo6, servo8, servo9, servo11, servo12, servo14, servo15, servo17, servo18]
@@ -98,7 +95,6 @@ def wave_gait():
             offset = index * (n//6)
             print((i + offset)%n,' / ', len(eachLeg.walk_path))
             eachLeg.move_to(eachLeg.walk_path[(i + offset)%n])
-        
 
 def ripple_gait():
     # ripple gait
@@ -145,17 +141,17 @@ def bi_gait():
             eachLeg.move_to(eachLeg.walk_path[(i + offset + ((n//3)*2))%n])
         print(i)
 
-def tri_gait():
+def tri_gait(theta = 0):
     # time on ground 75%
-    time_on_ground = .75
-    n = 36
+    time_on_ground = .60
+    n = 24
     # calculate paths for each leg using time on ground
     for eachLeg in legs:
-        eachLeg.walk_path = eachLeg.get_walk_paths(n, time_on_ground)
+        eachLeg.walk_path = eachLeg.get_walk_paths(n, time_on_ground, theta)
     # divide the legs into two groups
     group1 = [leg, leg5, leg2]
     group2 = [leg3, leg6, leg4]
-    n=len(leg.walk_path)
+    n = len(leg.walk_path)
     # offset by 50% of the path
     for i in range(n):
         for index, eachLeg in enumerate(group1):
@@ -167,14 +163,59 @@ def tri_gait():
             offset = n//2
             eachLeg.move_to(eachLeg.walk_path[(i + offset)%n])
 
+def rotate_body():
+    # Divide legs into two groups
+    group1 = [leg, leg5, leg2]
+    group2 = [leg3, leg6, leg4]
+    # move group 1 to raised position
+    time_on_ground = .52
+    n = 48
+    for eachleg in legs:
+        eachleg.turn_path = eachleg.get_turn_paths(n, time_on_ground, True)
+    
+    for i in range(n):
+        for index, eachLeg in enumerate(group1):
+            # calculate offset for each leg
+            offset = 0
+            eachLeg.move_to(eachLeg.turn_path[(i + offset)%n])
+        for index, eachLeg in enumerate(group2):
+            # calculate offset for each leg
+            offset = n//2
+            eachLeg.move_to(eachLeg.turn_path[(i + offset)%n])
 
-for i in range(3):
-    bi_gait()
+
+
+
+# for i in range(3):
+    # tri_gait()
+
+# for i in range(1):
+    # rotate_body()
+
+# Move leg 1 in a circle
+# leg.move_to(leg.get_raised_position())
+# path = leg.get_walk_paths(100, .5, math.pi)
+# for eachPoint in path:
+    # leg.move_to(eachPoint)
+    # print(eachPoint)
+    # time.sleep(.01)
+
+# for i in range (2):
+    # tri_gait(0)
+# 
+
+for i in range(2):
+    tri_gait(math.pi/2)
+
+for eachLeg in legs:
+    eachLeg.move_to_home()
 # aleg= leg3
 # aleg.move_to(aleg.get_raised_position())
 
-print('say anything to exit')
-input()
-for eachServo in servos:
-    eachServo.RAM['Torque Enable'].set_value(0)
 
+
+print('say anything to exit')
+cmd = input()
+if(cmd == 'exit'):
+    for eachServo in servos:
+        eachServo.RAM['Torque Enable'].set_value(0)

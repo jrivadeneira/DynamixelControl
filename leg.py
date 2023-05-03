@@ -11,6 +11,7 @@ class Leg:
         self.length2 = length2
         self.y_negate = y_negate
         self.walk_paths = None
+        self.turn_paths = None
         self.theta1_offset = theta1_offset 
         self.servo1.RAM['Torque Enable'].set_value(1)
         self.servo2.RAM['Torque Enable'].set_value(1)
@@ -72,7 +73,7 @@ class Leg:
     
     def get_raised_position(self):
         xyz = self.get_home_position()
-        return (xyz[0], xyz[1], xyz[2] - 225)
+        return (xyz[0], xyz[1], xyz[2] - 200)
     
     def get_forward_position(self):
         xyz = self.get_home_position()
@@ -87,10 +88,32 @@ class Leg:
         y = xyz[0] * math.sin(theta) + xyz[1] * math.cos(theta)
         z = xyz[2]
         return (x, y, z)
+
+    def rotate_about(self, xyz, ijk,theta):
+        # Subtract ijk from xyz
+        xyz = (xyz[0] - ijk[0], xyz[1] - ijk[1], xyz[2] - ijk[2])
+        # Rotate xyz
+        xyz = self.rotate(xyz, theta)
+        # Add ijk to xyz
+        xyz = (xyz[0] + ijk[0], xyz[1] + ijk[1], xyz[2] + ijk[2])
+        return xyz
     
-    def get_walk_paths(self, steps = 100, time_on_ground = 0.5):
+    def get_walk_paths(self, steps = 100, time_on_ground = 0.5, theta = 0):
+        if(self.y_negate):
+            theta = -theta
+        forward = self.rotate_about(self.get_forward_position(), self.get_home_position(), theta)
+        backward = self.rotate_about(self.get_backward_position(), self.get_home_position(), theta)
+        raised = self.get_raised_position()
+        paths = calculate_line_points(backward, forward, math.ceil(steps * time_on_ground)) + calculate_bezier_points(forward, raised, backward, math.floor(steps*(1-time_on_ground)))
+        return paths
+    
+    def get_turn_paths(self, steps=100, time_on_ground = 0.5, reverse = False):
         forward = self.get_forward_position()
         backward = self.get_backward_position()
+        if(reverse):
+            forward,backward = backward,forward
+        if(self.y_negate):
+            forward,backward = backward,forward
         raised = self.get_raised_position()
         paths = calculate_line_points(backward, forward, math.ceil(steps * time_on_ground)) + calculate_bezier_points(forward, raised, backward, math.floor(steps*(1-time_on_ground)))
         return paths
