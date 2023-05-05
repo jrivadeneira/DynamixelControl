@@ -83,11 +83,17 @@ class Leg:
         xyz = self.get_home_position()
         return (xyz[0], xyz[1] - 45, xyz[2])
 
-    def rotate(self, xyz, theta):
-        x = xyz[0] * math.cos(theta) - xyz[1] * math.sin(theta)
-        y = xyz[0] * math.sin(theta) + xyz[1] * math.cos(theta)
+    def rotate(self, xyz, theta=0, phi=0):
+        x = xyz[0]
+        y = xyz[1]
         z = xyz[2]
-        return (x, y, z)
+        x1 = x * math.cos(theta) - y * math.sin(theta)
+        y1 = x * math.sin(theta) + y * math.cos(theta)
+        z1 = z
+        x2 = x1
+        y2 = y1 * math.cos(phi) - z1 * math.sin(phi)
+        z2 = y1 * math.sin(phi) + z1 * math.cos(phi)
+        return (x2, y2, z2)
 
     def rotate_about(self, xyz, ijk,theta):
         # Subtract ijk from xyz
