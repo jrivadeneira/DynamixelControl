@@ -16,6 +16,7 @@ class Leg:
         self.servo1.RAM['Torque Enable'].set_value(1)
         self.servo2.RAM['Torque Enable'].set_value(1)
         self.servo3.RAM['Torque Enable'].set_value(1)
+        self.current_pos = self.get_rest_position()
         
     '''
     first_servo_position = mapit(thetas[0],4096,math.pi)
@@ -63,6 +64,19 @@ class Leg:
             xyz = self.rotate(xyz, -self.theta1_offset)
         self.move(xyz[0], xyz[1], xyz[2])
 
+    def get_rest_position(self):
+        xyz = (100,0,-50)
+        if(self.y_negate):
+            xyz = self.rotate(xyz, self.theta1_offset)
+        else:
+            xyz = self.rotate(xyz, -self.theta1_offset)
+        return xyz
+
+    def calculate_to_rest_path(self, steps = 24):
+        xyz = self.get_rest_position()
+        path = calculate_line_points(self.current_pos, xyz, steps)
+        return path
+
     def get_home_position(self):
         xyz = (100, 0, 100)
         if(self.y_negate):
@@ -71,9 +85,16 @@ class Leg:
             xyz = self.rotate(xyz, -self.theta1_offset)
         return xyz
     
+    def get_path_to_home(self, steps = 24, bezier = False):
+        xyz = self.current_pos
+        if(bezier):
+            return calculate_bezier_points(xyz, self.get_raised_position(), self.get_home_position(), steps)
+        return calculate_line_points(xyz, self.get_home_position, steps)
+
+    
     def get_raised_position(self):
         xyz = self.get_home_position()
-        return (xyz[0], xyz[1], xyz[2] - 200)
+        return (xyz[0], xyz[1], xyz[2] - 100)
     
     def get_forward_position(self):
         xyz = self.get_home_position()
@@ -105,7 +126,7 @@ class Leg:
         return xyz
     
     def get_walk_paths(self, steps = 100, time_on_ground = 0.5, theta = 0):
-        if(self.y_negate):
+        if(self.y_negate and theta != 0):
             theta = -theta
         forward = self.rotate_about(self.get_forward_position(), self.get_home_position(), theta)
         backward = self.rotate_about(self.get_backward_position(), self.get_home_position(), theta)
@@ -123,3 +144,10 @@ class Leg:
         raised = self.get_raised_position()
         paths = calculate_line_points(backward, forward, math.ceil(steps * time_on_ground)) + calculate_bezier_points(forward, raised, backward, math.floor(steps*(1-time_on_ground)))
         return paths
+    
+    def calculate_to_current_path_start(self, steps=12, bezier=True):
+        target = self.current_path[-1]
+        if(bezier):
+            return calculate_bezier_points(self.current_pos,self.get_raised_position(), target, steps)
+        return calculate_line_points(self.current_pos, target, steps)
+        

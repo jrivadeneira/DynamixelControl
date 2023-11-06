@@ -3,7 +3,7 @@ from dynafacade import ServoController
 import time
 import math
 
-ctrl = ServoController('/dev/cu.usbserial-1410')
+ctrl = ServoController('COM4')
 ctrl.port_handler.setBaudRate(1000000)
 
 # create servos for first three legs
@@ -71,14 +71,6 @@ def move_group(group, position):
     for eachLeg in group:
         eachLeg.move_to(position)
 
-# create a path for the legs to follow
-for eachLeg in legs:
-    eachLeg.move_to_home()
-time.sleep(1)
-n = 100
-for eachLeg in legs:
-    eachLeg.walk_path = eachLeg.get_walk_paths(n)
-
 def wave_gait():
     # wave gait
     # time on ground
@@ -141,81 +133,149 @@ def bi_gait():
             eachLeg.move_to(eachLeg.walk_path[(i + offset + ((n//3)*2))%n])
         print(i)
 
-def tri_gait(theta = 0):
-    # time on ground 75%
-    time_on_ground = .60
+def gait_prepare():
+    pass
+
+def gait_complete():
     n = 24
-    # calculate paths for each leg using time on ground
+    group1 = [leg, leg5, leg2]
+    group2 = [leg3, leg6, leg4]
     for eachLeg in legs:
-        eachLeg.walk_path = eachLeg.get_walk_paths(n, time_on_ground, theta)
+        eachLeg.current_path = eachLeg.get_path_to_home(n, True)
+    for i in range(n):
+        for eachLeg in group1:
+            eachLeg.move_to(eachLeg.current_path[i])
+    for i in range(n):
+        for eachLeg in group2:
+            eachLeg.move_to(eachLeg.current_path[i])
+
+def prepare_bi_gait_paths(steps = 24, time_on_ground = .35, theta = 0):
+    bi_legs = [leg, leg4, leg2, leg6, leg3, leg5]
+    for index, eachLeg in enumerate(bi_legs):
+        eachLeg.current_path = eachLeg.get_walk_paths(steps, time_on_ground, theta)
+        offset = (index//2) * (steps//3)
+        eachLeg.current_path = eachLeg.current_path[-offset:] + eachLeg.current_path[:-offset]
+
+def prepare_ripple_gait_paths(steps = 24, time_on_ground = 5/6, theta = 0):
+    for index, eachLeg in enumerate(legs):
+        # calculate offset for each leg
+        eachLeg.current_path = eachLeg.get_walk_paths(steps, time_on_ground, theta)
+        offset = (index * (steps//4)) % steps
+        eachLeg.current_path = eachLeg.current_path[-offset:] + eachLeg.current_path[:-offset]
+
+def prepare_wave_gait_paths(steps=24, time_on_ground=.85, theta=0):
+    for i,eachLeg in enumerate(legs):
+        eachLeg.current_path = eachLeg.get_walk_paths(steps, time_on_ground, theta)
+        # set the offset here
+        offset = (steps//6) * i
+        eachLeg.current_path = eachLeg.current_path[-offset:] + eachLeg.current_path[:-offset]
+
+def prepare_tri_gait_paths(steps = 24, time_on_ground=.75, theta=0):
+    for eachLeg in legs:
+        eachLeg.walk_path = eachLeg.get_walk_paths(steps, time_on_ground, theta)
     # divide the legs into two groups
     group1 = [leg, leg5, leg2]
     group2 = [leg3, leg6, leg4]
     n = len(leg.walk_path)
     # offset by 50% of the path
-    for i in range(n):
-        for index, eachLeg in enumerate(group1):
-            # calculate offset for each leg
-            offset = 0
-            eachLeg.move_to(eachLeg.walk_path[(i + offset)%n])
-        for index, eachLeg in enumerate(group2):
-            # calculate offset for each leg
-            offset = n//2
-            eachLeg.move_to(eachLeg.walk_path[(i + offset)%n])
-
-def rotate_body():
-    # Divide legs into two groups
+    offset = n//2
+    for eachLeg in group1:
+        eachLeg.current_path = eachLeg.walk_path
+    for eachLeg in group2:
+        eachLeg.current_path = eachLeg.walk_path[-offset:] + eachLeg.walk_path[:-offset]
+    
+def start_motion(theta = 0, time_on_ground=0.55, steps = 12):
     group1 = [leg, leg5, leg2]
     group2 = [leg3, leg6, leg4]
-    # move group 1 to raised position
-    time_on_ground = .52
-    n = 48
-    for eachleg in legs:
-        eachleg.turn_path = eachleg.get_turn_paths(n, time_on_ground, True)
-    
+    # generate halfstep paths
+    for eachLeg in group1:
+        eachLeg.to_path_start = eachLeg.calculate_to_current_path_start(steps, True)
+    for eachLeg in group2:
+        eachLeg.to_path_start = eachLeg.calculate_to_current_path_start(steps, False)
+    for i in range(steps):
+        for eachLeg in legs:
+            eachLeg.move_to(eachLeg.to_path_start[i])
+
+def move_legs(theta = 0):
+    n = len(legs[0].current_path)
+    # Run each leg through it's paths. 
     for i in range(n):
-        for index, eachLeg in enumerate(group1):
-            # calculate offset for each leg
-            offset = 0
-            eachLeg.move_to(eachLeg.turn_path[(i + offset)%n])
-        for index, eachLeg in enumerate(group2):
-            # calculate offset for each leg
-            offset = n//2
-            eachLeg.move_to(eachLeg.turn_path[(i + offset)%n])
+        for eachLeg in legs:
+            eachLeg.move_to(eachLeg.current_path[i])
+        
+def rotate_body(left=False):
+    # Divide legs into two groups
+    group2 = [leg3, leg6, leg4]
+    # move group 1 to raised position
+    time_on_ground = .55
+    n = 24
+    offset = n//2
+    for eachleg in legs:
+        eachleg.current_path = eachleg.get_turn_paths(n, time_on_ground, left)
+    for eachleg in group2:
+        eachleg.current_path = eachleg.current_path[-offset:] + eachleg.current_path[:-offset]
 
+def walk_forwards(x=5):
+    start_motion()
+    for i in range(x):
+        move_legs()
+    gait_complete()
 
+def walk_backwards(x=5):
+    start_motion(theta=math.pi)
+    for i in range(x):
+        move_legs(theta=math.pi)
+    gait_complete()
 
+def strafe_left(x=5):
+    start_motion(theta=math.pi/2)
+    for i in range(x):
+        move_legs(theta=math.pi/2)
+    gait_complete()
 
-# for i in range(3):
-    # tri_gait()
+def strafe_right(x=5):
+    start_motion(theta=-math.pi/2)
+    for i in range(x):
+        move_legs(theta=-math.pi/2)
+    gait_complete()
 
-# for i in range(1):
-    # rotate_body()
-
-# Move leg 1 in a circle
-# leg.move_to(leg.get_raised_position())
-# path = leg.get_walk_paths(100, .5, math.pi)
-# for eachPoint in path:
-    # leg.move_to(eachPoint)
-    # print(eachPoint)
-    # time.sleep(.01)
-
-# for i in range (2):
-    # tri_gait(0)
-# 
-
-for i in range(2):
-    tri_gait(math.pi/2)
-
+n = 16
 for eachLeg in legs:
-    eachLeg.move_to_home()
-# aleg= leg3
-# aleg.move_to(aleg.get_raised_position())
+    eachLeg.current_path = eachLeg.get_path_to_home(n, True)
 
+for i in range(n):
+    for eachLeg in legs:
+        eachLeg.move_to(eachLeg.current_path[i])
+time.sleep(1)
+# Experiment zone
 
+# prepare_tri_gait_paths()
+# start_tri_gait(theta=math.pi)
+# # time.sleep(1)
 
-print('say anything to exit')
-cmd = input()
-if(cmd == 'exit'):
-    for eachServo in servos:
-        eachServo.RAM['Torque Enable'].set_value(0)
+# for i in range(4):
+#     tri_gait(theta=math.pi)
+# gait_complete()
+# walk_forwards()
+# strafe_right()
+# strafe_left()
+# rotate_body()
+# prepare_tri_gait_paths()
+prepare_bi_gait_paths()
+start_motion()
+for i in range(3):
+    move_legs()
+gait_complete()
+
+# Cleanup zone
+time.sleep(1)
+# Get the raise path for each leg
+for eachLeg in legs:
+    eachLeg.current_path = eachLeg.calculate_to_rest_path(n)
+
+for i in range(n):
+    for eachLeg in legs:
+        eachLeg.move_to(eachLeg.current_path[i])
+
+for eachServo in servos:
+    eachServo.RAM['Torque Enable'].set_value(0)
