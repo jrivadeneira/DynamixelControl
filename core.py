@@ -2,8 +2,9 @@ from leg import Leg
 from dynafacade import ServoController
 import time
 import math
+import keyboard
 
-ctrl = ServoController('COM4')
+ctrl = ServoController('COM3')
 ctrl.port_handler.setBaudRate(1000000)
 
 # create servos for first three legs
@@ -137,7 +138,7 @@ def gait_prepare():
     pass
 
 def gait_complete():
-    n = 24
+    n = 18
     group1 = [leg, leg5, leg2]
     group2 = [leg3, leg6, leg4]
     for eachLeg in legs:
@@ -156,14 +157,20 @@ def prepare_bi_gait_paths(steps = 24, time_on_ground = .35, theta = 0):
         offset = (index//2) * (steps//3)
         eachLeg.current_path = eachLeg.current_path[-offset:] + eachLeg.current_path[:-offset]
 
-def prepare_ripple_gait_paths(steps = 24, time_on_ground = 5/6, theta = 0):
+def prepare_ripple_gait_paths(steps = 24, time_on_ground = 4/6, theta = 0):
+    n = steps/6
+    offset2 = n*4
+    offset3 = n*2
+    offset4 = n*5
+    offset5 = n
+    offset6 = n*3
+    offsets = [0, offset2, offset3, offset4, offset5, offset6]
     for index, eachLeg in enumerate(legs):
         # calculate offset for each leg
         eachLeg.current_path = eachLeg.get_walk_paths(steps, time_on_ground, theta)
-        offset = (index * (steps//4)) % steps
-        eachLeg.current_path = eachLeg.current_path[-offset:] + eachLeg.current_path[:-offset]
+        eachLeg.current_path = eachLeg.current_path[-int(offsets[index]):] + eachLeg.current_path[:-int(offsets[index])]
 
-def prepare_wave_gait_paths(steps=24, time_on_ground=.85, theta=0):
+def prepare_wave_gait_paths(steps = 24, time_on_ground=.85, theta=0):
     for i,eachLeg in enumerate(legs):
         eachLeg.current_path = eachLeg.get_walk_paths(steps, time_on_ground, theta)
         # set the offset here
@@ -196,7 +203,7 @@ def start_motion(theta = 0, time_on_ground=0.55, steps = 12):
         for eachLeg in legs:
             eachLeg.move_to(eachLeg.to_path_start[i])
 
-def move_legs(theta = 0):
+def move_legs():
     n = len(legs[0].current_path)
     # Run each leg through it's paths. 
     for i in range(n):
@@ -249,26 +256,49 @@ for i in range(n):
 time.sleep(1)
 # Experiment zone
 
-# prepare_tri_gait_paths()
-# start_tri_gait(theta=math.pi)
-# # time.sleep(1)
+# implement keyboard control
+def keyboard_control():
+    gait_function = prepare_ripple_gait_paths
+    was_pressed = False
+    while True:
+        time.sleep(0.001)
+        if keyboard.is_pressed('1'):
+            gait_function = prepare_ripple_gait_paths
+        if keyboard.is_pressed('2'):
+            gait_function = prepare_wave_gait_paths
+        if keyboard.is_pressed('3'):
+            gait_function = prepare_tri_gait_paths
+        if keyboard.is_pressed('4'):
+            gait_function = prepare_bi_gait_paths
+        if keyboard.is_pressed('w'):
+            gait_function()
+        if keyboard.is_pressed('s'):
+            gait_function(theta=math.pi)
+        if keyboard.is_pressed('a'):
+            gait_function(theta=math.pi/2)
+        if keyboard.is_pressed('d'):
+            gait_function(theta=-math.pi/2)
+        if keyboard.is_pressed('q'):
+            rotate_body(True)
+        if keyboard.is_pressed('e'):
+            rotate_body()
+        if keyboard.is_pressed('esc'):
+            break
+        # Only call move legs if a key is pressed that is not escape or a gait selection
+        if keyboard.is_pressed('w') or keyboard.is_pressed('s') or keyboard.is_pressed('a') or keyboard.is_pressed('d') or keyboard.is_pressed('q') or keyboard.is_pressed('e'):
+            if not was_pressed:
+                start_motion()
+            move_legs()
+            was_pressed = True
 
-# for i in range(4):
-#     tri_gait(theta=math.pi)
-# gait_complete()
-# walk_forwards()
-# strafe_right()
-# strafe_left()
-# rotate_body()
-# prepare_tri_gait_paths()
-prepare_bi_gait_paths()
-start_motion()
-for i in range(3):
-    move_legs()
-gait_complete()
+        # call gait complete on key release
+        if was_pressed and (not keyboard.is_pressed('w') and not keyboard.is_pressed('s') and not keyboard.is_pressed('a') and not keyboard.is_pressed('d') and not keyboard.is_pressed('q') and not keyboard.is_pressed('e')):
+            gait_complete()
+            was_pressed = False
 
+keyboard_control()
 # Cleanup zone
-time.sleep(1)
+# time.sleep(10)
 # Get the raise path for each leg
 for eachLeg in legs:
     eachLeg.current_path = eachLeg.calculate_to_rest_path(n)

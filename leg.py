@@ -98,11 +98,11 @@ class Leg:
     
     def get_forward_position(self):
         xyz = self.get_home_position()
-        return (xyz[0], xyz[1] + 45, xyz[2])
+        return (xyz[0], xyz[1] + 50, xyz[2])
     
     def get_backward_position(self):
         xyz = self.get_home_position()
-        return (xyz[0], xyz[1] - 45, xyz[2])
+        return (xyz[0], xyz[1] - 50, xyz[2])
 
     def rotate(self, xyz, theta=0, phi=0):
         x = xyz[0]
