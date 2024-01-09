@@ -2,9 +2,9 @@ from leg import Leg
 from dynafacade import ServoController
 import time
 import math
-import keyboard
+import pygame
 
-ctrl = ServoController('COM3')
+ctrl = ServoController('/dev/tty.usbserial-210')
 ctrl.port_handler.setBaudRate(1000000)
 
 # create servos for first three legs
@@ -67,6 +67,8 @@ leg5 = Leg(servo15, servo14, servo13, length0, length1, length2, leg3_params[0],
 leg6 = Leg(servo18, servo17, servo16, length0, length1, length2, leg2_params[0], leg2_params[1])
 
 legs = [leg, leg6, leg5, leg4, leg2, leg3]
+
+pygame.init()
 
 def move_group(group, position):
     for eachLeg in group:
@@ -260,41 +262,73 @@ time.sleep(1)
 def keyboard_control():
     gait_function = prepare_ripple_gait_paths
     was_pressed = False
-    while True:
-        time.sleep(0.001)
-        if keyboard.is_pressed('1'):
-            gait_function = prepare_ripple_gait_paths
-        if keyboard.is_pressed('2'):
-            gait_function = prepare_wave_gait_paths
-        if keyboard.is_pressed('3'):
-            gait_function = prepare_tri_gait_paths
-        if keyboard.is_pressed('4'):
-            gait_function = prepare_bi_gait_paths
-        if keyboard.is_pressed('w'):
-            gait_function()
-        if keyboard.is_pressed('s'):
-            gait_function(theta=math.pi)
-        if keyboard.is_pressed('a'):
-            gait_function(theta=math.pi/2)
-        if keyboard.is_pressed('d'):
-            gait_function(theta=-math.pi/2)
-        if keyboard.is_pressed('q'):
-            rotate_body(True)
-        if keyboard.is_pressed('e'):
-            rotate_body()
-        if keyboard.is_pressed('esc'):
-            break
+    motion_key = False
+    running = True
+    while running:
+        # time.sleep(0.001)
+        for event in pygame.event.get():
+            if(event.type == pygame.KEYUP):
+                if(event.key == pygame.K_w):
+                    motion_key = False
+                    gait_function()
+                if(event.key == pygame.K_a):
+                    motion_key = False
+                    gait_function(theta=math.pi/2)
+                if(event.key == pygame.K_s):
+                    motion_key = False
+                    gait_function(theta=math.pi)
+                if(event.key == pygame.K_d):
+                    motion_key = False
+                    gait_function(theta=-math.pi/2)
+                if(event.key == pygame.K_q):
+                    motion_key = False
+                    rotate_body(True)
+                if(event.key == pygame.K_e):
+                    motion_key = False
+                    rotate_body()
+
+            if(event.type == pygame.KEYDOWN):
+                if(event.key == pygame.K_1):
+                    gait_function = prepare_ripple_gait_paths
+                if(event.key == pygame.K_2):
+                    gait_function = prepare_wave_gait_paths
+                if(event.key == pygame.K_3):
+                    gait_function = prepare_tri_gait_paths
+                if(event.key == pygame.K_4):
+                    gait_function = prepare_bi_gait_paths
+                
+                if(event.key == pygame.K_w):
+                    motion_key = True
+                    gait_function()
+                if(event.key == pygame.K_a):
+                    motion_key = True
+                    gait_function(theta=math.pi/2)
+                if(event.key == pygame.K_s):
+                    motion_key = True
+                    gait_function(theta=math.pi)
+                if(event.key == pygame.K_d):
+                    motion_key = True
+                    gait_function(theta=-math.pi/2)
+                if(event.key == pygame.K_q):
+                    motion_key = True
+                    rotate_body(True)
+                if(event.key == pygame.K_e):
+                    motion_key = True
+                    rotate_body()
+                if(event.key == pygame.K_ESCAPE):
+                    running=False
         # Only call move legs if a key is pressed that is not escape or a gait selection
-        if keyboard.is_pressed('w') or keyboard.is_pressed('s') or keyboard.is_pressed('a') or keyboard.is_pressed('d') or keyboard.is_pressed('q') or keyboard.is_pressed('e'):
+        if motion_key:
             if not was_pressed:
                 start_motion()
             move_legs()
             was_pressed = True
 
         # call gait complete on key release
-        if was_pressed and (not keyboard.is_pressed('w') and not keyboard.is_pressed('s') and not keyboard.is_pressed('a') and not keyboard.is_pressed('d') and not keyboard.is_pressed('q') and not keyboard.is_pressed('e')):
+        if was_pressed and motion_key:
             gait_complete()
             was_pressed = False
+            # motion_key = False
 
 keyboard_control()
 # Cleanup zone
